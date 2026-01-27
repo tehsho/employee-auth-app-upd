@@ -1,0 +1,223 @@
+﻿@page "/profile"
+<PageTitle>Employee Authentication</PageTitle>
+@using EmployeeAuth.Blazor.Services
+@inject ApiClient Api
+@inject TokenStore TokenStore
+@inject NavigationManager Nav
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+
+            <div class="card shadow-sm rounded-4">
+                <div class="card-body p-4">
+
+                    <h3 class="mb-3">My Profile</h3>
+
+                    @if (!string.IsNullOrWhiteSpace(Error))
+                    {
+                        <div class="alert alert-danger py-2">@Error</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Success))
+                    {
+                        <div class="alert alert-success py-2">@Success</div>
+                    }
+
+                    @if (Me is null)
+                    {
+                        <div class="text-muted">Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Username</label>
+                            <div class="form-control bg-light">@Me.UserName</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Email</label>
+                            <div class="form-control bg-light">@Me.Email</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Name</label>
+                            <input class="form-control"
+                                   @bind="Name"
+                                   @bind:event="oninput" />
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-2">
+                            <label class="form-label small text-muted">New Password</label>
+                            <div class="input-group">
+                                <input class="form-control"
+                                       placeholder="Enter new password"
+                                       type="@NewType"
+                                       @bind="NewPassword"
+                                       @bind:event="oninput" />
+
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        title="Toggle password visibility"
+                                        @onclick="(() => ShowNew = !ShowNew)">
+                                    <i class="bi @(ShowNew ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Confirm New Password</label>
+                            <div class="input-group">
+                                <input class="form-control"
+                                       placeholder="Confirm new password"
+                                       type="@ConfirmType"
+                                       @bind="ConfirmPassword"
+                                       @bind:event="oninput" />
+
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        title="Toggle password visibility"
+                                        @onclick="(() => ShowConfirm = !ShowConfirm)">
+                                    <i class="bi @(ShowConfirm ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-100 mb-2"
+                                @onclick="Save"
+                                disabled="@Saving">
+                            @(Saving ? "Saving..." : "Save Changes")
+                        </button>
+
+                        <button class="btn btn-outline-secondary w-100"
+                                @onclick="Logout">
+                            Logout
+                        </button>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private ApiClient.MeResponse? Me { get; set; }
+
+    private string Name { get; set; } = "";
+
+    private string NewPassword { get; set; } = "";
+    private string ConfirmPassword { get; set; } = "";
+
+    private bool ShowNew { get; set; }
+    private bool ShowConfirm { get; set; }
+    private string NewType => ShowNew ? "text" : "password";
+    private string ConfirmType => ShowConfirm ? "text" : "password";
+
+    private string Error { get; set; } = "";
+    private string Success { get; set; } = "";
+    private bool Saving { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!TokenStore.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadMe();
+    }
+
+    private async Task LoadMe()
+    {
+        Error = "";
+        Success = "";
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(TokenStore.Token))
+            {
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            Me = await Api.GetMeAsync(TokenStore.Token!);
+            Name = Me.Name;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Error = "Unauthorized (token not sent or invalid). " + ex.Message;
+            return;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task Save()
+    {
+        Error = "";
+        Success = "";
+        Saving = true;
+
+        try
+        {
+            var wantsPw = !string.IsNullOrWhiteSpace(NewPassword) || !string.IsNullOrWhiteSpace(ConfirmPassword);
+
+            if (wantsPw)
+            {
+                if (string.IsNullOrWhiteSpace(NewPassword))
+                {
+                    Error = "Please enter a new password.";
+                    return;
+                }
+                if (NewPassword != ConfirmPassword)
+                {
+                    Error = "New password and confirmation do not match.";
+                    return;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(TokenStore.Token))
+            {
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            await Api.UpdateMeAsync(TokenStore.Token!, Name.Trim(), wantsPw ? NewPassword : null);
+
+            Success = "Updated!";
+            NewPassword = "";
+            ConfirmPassword = "";
+            ShowNew = false;
+            ShowConfirm = false;
+
+            // refresh display
+            if (Me is not null) {
+                Me = Me with { Name = Name.Trim() };
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Logout();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            Saving = false;
+        }
+    }
+
+    private void Logout()
+    {
+        TokenStore.Clear();
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+}

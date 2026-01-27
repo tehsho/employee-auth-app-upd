@@ -1,0 +1,113 @@
+﻿@page "/"
+@page "/login"
+<PageTitle>Employee Authentication</PageTitle>
+@using EmployeeAuth.Blazor.Services
+@inject ApiClient Api
+@inject TokenStore TokenStore
+@inject NavigationManager Nav
+    <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+    <div class="card shadow-sm rounded-4">
+        <div class="card-body p-4">
+
+            <h3 class="text-center mb-3">Login</h3>
+
+            @if (!string.IsNullOrWhiteSpace(LoginError))
+            {
+                <div class="alert alert-danger py-2">@LoginError</div>
+            }
+
+            <EditForm Model="@LoginModel" OnValidSubmit="@SubmitLogin">
+                <div class="mb-3">
+                    <input class="form-control"
+                           placeholder="Username or Email"
+                           @bind="LoginModel.Login"
+                           @bind:event="oninput" />
+                </div>
+
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input class="form-control"
+                               placeholder="Password"
+                               type="@PasswordInputType"
+                               @bind="LoginModel.Password"
+                               @bind:event="oninput" />
+
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                title="Toggle password visibility"
+                                @onclick="TogglePassword">
+                            <i class="bi @(ShowPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 mb-2" disabled="@Loading">
+                    @(Loading ? "Signing in..." : "Login")
+                </button>
+
+                <button type="button" class="btn btn-outline-secondary w-100" @onclick="OpenRegister">
+                    Create an account
+                </button>
+            </EditForm>
+        </div>
+    </div>
+    </div>
+</div>
+
+<RegisterModal IsOpen="@ShowRegister" IsOpenChanged="OnRegisterOpenChanged" />
+
+@code {
+    private sealed class LoginFormModel
+    {
+        public string Login { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    private LoginFormModel LoginModel { get; } = new();
+
+    private bool ShowPassword { get; set; }
+    private string PasswordInputType => ShowPassword ? "text" : "password";
+
+    private bool Loading { get; set; }
+    private string LoginError { get; set; } = "";
+
+    private bool ShowRegister { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (TokenStore.IsLoggedIn)
+            Nav.NavigateTo("/profile"); // NO forceLoad
+    }
+
+    private void TogglePassword() => ShowPassword = !ShowPassword;
+
+    private void OpenRegister() => ShowRegister = true;
+
+    private Task OnRegisterOpenChanged(bool value)
+    {
+        ShowRegister = value;
+        return Task.CompletedTask;
+    }
+
+    private async Task SubmitLogin()
+    {
+        LoginError = "";
+        Loading = true;
+
+        try
+        {
+            var token = await Api.LoginAsync(LoginModel.Login.Trim(), LoginModel.Password);
+            TokenStore.Set(token);
+            Nav.NavigateTo("/profile");
+        }
+        catch (Exception ex)
+        {
+            LoginError = ex.Message;
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+}

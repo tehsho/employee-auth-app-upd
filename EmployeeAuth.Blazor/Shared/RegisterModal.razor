@@ -1,0 +1,116 @@
+﻿@using EmployeeAuth.Blazor.Services
+@inject ApiClient Api
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Account</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(Success))
+                    {
+                        <div class="alert alert-success py-2">
+                            @Success
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Error))
+                    {
+                        <div class="alert alert-danger py-2">
+                            @Error
+                        </div>
+                    }
+
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Username</label>
+                        <input class="form-control" @bind="UserName" disabled="@Loading" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Full name</label>
+                        <input class="form-control" @bind="Name" disabled="@Loading" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Email</label>
+                        <input class="form-control" @bind="Email" disabled="@Loading" />
+                    </div>
+
+                    <div class="small text-muted mt-2">
+                        After registration, the system generates a password and sends it by email.
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-success" @onclick="Submit" disabled="@Loading">
+                        @(Loading ? "Creating..." : "Register")
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="Close">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    private string UserName { get; set; } = "";
+    private string Name { get; set; } = "";
+    private string Email { get; set; } = "";
+
+    private string Error { get; set; } = "";
+    private string Success { get; set; } = "";
+    private bool Loading { get; set; }
+
+    private async Task Submit()
+    {
+        Error = "";
+        Success = "";
+        Loading = true;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(UserName) ||
+                string.IsNullOrWhiteSpace(Name) ||
+                string.IsNullOrWhiteSpace(Email))
+            {
+                Error = "Please fill all fields.";
+                return;
+            }
+
+            var id = await Api.RegisterAsync(UserName.Trim(), Name.Trim(), Email.Trim());
+            Success = $"Account created. Password was generated and sent by email.";
+
+            // Allow creating another user without closing
+            UserName = "";
+            Name = "";
+            Email = "";
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        Error = "";
+        Success = "";
+        Loading = false;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+}
