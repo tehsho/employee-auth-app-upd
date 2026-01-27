@@ -1,0 +1,5 @@
+# cspell:disable
+node_modules
+.next
+dist
+coverage
