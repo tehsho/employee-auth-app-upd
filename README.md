@@ -8,13 +8,14 @@ A full-stack assessment project demonstrating:
 -   Email notifications
 -   Logging & configuration via Options pattern
 -   Unit & integration testing
--   Two independent frontend clients:
+-   Three independent frontend clients:
+    -   Vue 3 + Vuetify
     -   Next.js + Tailwind
     -   Blazor Server
 
 ------------------------------------------------------------------------
 
-## 🏗️ Solution Architecture
+## Solution Architecture
 
 EmployeeAuth.Api\
 EmployeeAuth.Application\
@@ -22,6 +23,7 @@ EmployeeAuth.Domain\
 EmployeeAuth.Infrastructure\
 EmployeeAuth.Tests
 
+employee-auth-vue (Vue 3 frontend)\
 employee-auth-ui (Next.js frontend)\
 EmployeeAuth.Blazor (Blazor Server frontend)
 
@@ -37,7 +39,7 @@ EmployeeAuth.Blazor (Blazor Server frontend)
 
 ------------------------------------------------------------------------
 
-## 🚀 Features
+## Features
 
 ### Backend
 
@@ -56,6 +58,17 @@ EmployeeAuth.Blazor (Blazor Server frontend)
 -   Options pattern for configuration
 
 ### Frontends
+
+#### Vue 3 + Vuetify
+
+-   Vue 3 (Composition API) + TypeScript
+-   Vuetify 3 component library
+-   JWT authentication
+-   Login page
+-   Profile page
+-   Password update
+-   Logout flow
+-   Error & loading state handling
 
 #### Next.js
 
@@ -77,7 +90,7 @@ EmployeeAuth.Blazor (Blazor Server frontend)
 
 ------------------------------------------------------------------------
 
-## 📐 Architectural Decisions
+## Architectural Decisions
 
 ### MediatR / CQRS
 
@@ -123,7 +136,7 @@ Enables mocking and test isolation.
 
 ------------------------------------------------------------------------
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 ### Unit Tests
 
@@ -157,7 +170,7 @@ Scenarios:
 
 ------------------------------------------------------------------------
 
-## ▶️ Running the System
+## Running the System
 
 ### Backend API
 
@@ -165,6 +178,14 @@ cd EmployeeAuth.Api\
 dotnet run
 
 Swagger available at /swagger.
+
+------------------------------------------------------------------------
+
+### Vue 3 Client
+
+cd employee-auth-vue\
+npm install\
+npm run dev
 
 ------------------------------------------------------------------------
 
@@ -183,7 +204,7 @@ dotnet run
 
 ------------------------------------------------------------------------
 
-## ⚙️ Configuration
+## Configuration
 
 Backend configuration lives in:
 
@@ -199,7 +220,7 @@ Includes:
 
 ------------------------------------------------------------------------
 
-## 📌 Future Improvements
+## Future Improvements
 
 -   Refresh tokens
 -   Role-based authorization
@@ -212,7 +233,7 @@ Includes:
 
 ------------------------------------------------------------------------
 
-## 🧠 Summary
+## Summary
 
 This project demonstrates:
 
